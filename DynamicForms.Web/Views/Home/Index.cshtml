@@ -1,0 +1,173 @@
+﻿@{
+    ViewBag.Title = "Formlar";
+}
+<div class="row" ng-app="formsApp" ng-controller="formsControl">
+    <div class="col-lg-12">
+        <h1>
+            Formlar
+            <button class="btn btn-primary pull-right" ng-click="newForm()" data-toggle="modal" data-target="#myModal">Yeni Form</button>
+        </h1>
+        <div>
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th>Form No</th>
+                        <th>Form İsmi</th>
+                        <th>Açıklama</th>
+                        <th>Oluşturma Tarihi</th>
+                        <th>Form Sahibi</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tr ng-repeat="x in forms">
+                    <td>{{ x.Id }}</td>
+                    <td>{{ x.Name }}</td>
+                    <td>{{ x.Description }}</td>
+                    <td>{{ x.CreatedAt | localizeDate }}</td>
+                    <td>{{ x.User.Username }}</td>
+                    <td>
+                        <div class="pull-right">
+                            <a class="btn btn-default" href="/forms/{{x.Id}}" title="form önizleme"> <i class="glyphicon glyphicon-blackboard"></i>  </a>
+                            <a ng-click="updateForm(x.Id)" class="btn btn-default" data-toggle="modal" data-target="#myModal" title="formu düzenle"><i class="glyphicon glyphicon-edit"></i></a>
+                            <a ng-click="deleteForm(x.Id)" class="btn btn-danger" title="formu sil"><i class="glyphicon glyphicon-trash"></i></a>
+                        </div>
+
+                    </td>
+                </tr>
+            </table>
+
+        </div>
+
+
+    </div>
+    <div id="myModal" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <form class="form-horizontal" ng-submit="submit()">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title">Yeni Form</h4>
+                    </div>
+                    <div class="modal-body">
+
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">Form Adı</label>
+                            <div class="col-sm-10">
+                                <input type="text" required class="form-control" placeholder="Form Adı" ng-model="model.Name" value="{{model.Name}}">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">Açıklama</label>
+                            <div class="col-sm-10">
+                                <textarea class="form-control" ng-model="model.Description">{{model.Description}}</textarea>
+                            </div>
+                        </div>
+                        <hr />
+                        <div class="col-sm-offset-2 col-sm-10" style="margin-bottom:20px;">
+                            <h4 class="modal-title">Form Alanları</h4>
+                        </div>
+                        <div class="col-sm-offset-2 col-sm-10" ng-repeat="f in model.Fields" style="padding-top:20px;padding-bottom:20px; margin-bottom:20px; border:1px solid #ddd;">
+                            <div class="form-group">
+                                <label for="inputEmail3" class="col-sm-3 control-label">Alan Adı</label>
+                                <div class="col-sm-9">
+                                    <input type="text" required class="form-control" placeholder="Alan Adı" ng-model="f.Name" value="{{f.Name}}">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label">Alan Tipi</label>
+                                <div class="col-sm-9">
+                                    <select class="form-control" ng-model="f.DataType">
+                                        <option ng-repeat="x in DataTypes" ng-selected="f.DataType == x" value="{{x}}">{{x}}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-sm-9 col-sm-offset-3">
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" ng-model="f.Required" /> Zorunlu
+                                    </label>
+                                </div>
+                            </div>
+                            <button class="btn btn-sm" ng-click="deleteField($index)"><i class="glyphicon glyphicon-trash"></i></button>
+                        </div>
+                        <br />
+                        <div class="form-group">
+                            <div class="col-sm-offset-2 col-sm-10">
+                                <button ng-click="addNewField()" class="btn btn-default">Alan Ekle</button>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Kapat</button>
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                    </div>
+                </form>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+</div>
+<script>
+    var app = angular.module('formsApp', []);
+    app.controller('formsControl', function ($scope, $http) {
+
+        $scope.DataTypes = ["string", "number"];
+       
+        $scope.addNewField = function () {
+            $scope.model.Fields.push($scope.newField())
+        }
+
+        $scope.newField = function () {
+            return { Required: false, Name: "", DataType: "number" };
+        }
+
+        $scope.deleteField = function ($index) {
+            $scope.model.Fields.splice($index, 1);
+        }
+
+        $scope.model = {};
+
+        $scope.newForm = function () {
+            $scope.model = {
+                Name: "",
+                Description: "",
+                Fields: [],
+            }
+            $scope.model.Fields.push($scope.newField())
+        }
+
+        $scope.updateForm = function (id) {
+            $http.get("/getDetail/" + id)
+                .then(function (response) { $scope.model = response.data; });
+        }
+
+        $scope.deleteForm = function (id) {
+            if (confirm("silmeyi onaylıyor musunuz?")) {
+                $http.get("/delete/" + id)
+                    .then(function (response) { $scope.loadData(); });
+            }
+        }
+
+        $scope.submit = function () {
+            $http.post("/home/updateForm", JSON.stringify($scope.model))
+                .then(function (response) {
+                    $scope.loadData();
+                    $('#myModal').modal('hide');
+                })
+        }
+
+        $scope.loadData = function () {
+            $http.get("/home/getdata")
+                .then(function (response) { $scope.forms = response.data; });
+        }
+
+
+        $scope.loadData();
+    })
+        .filter('localizeDate', function () {
+            return function (date) {
+                return new Date(date).toLocaleString();
+            };
+        })
+</script>
