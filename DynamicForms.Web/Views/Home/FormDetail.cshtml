@@ -29,6 +29,8 @@
                 $scope.submit = function () {
                     alert('form gönderildi')
                 }
+                $http.get("/getDetail/" + id)
+                    .then(function (response) { $scope.form=response.data; });
                 
             });
         </script>
